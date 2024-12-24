@@ -3,6 +3,7 @@ plugins {
 	kotlin("plugin.spring") version "1.9.25"
 	id("org.springframework.boot") version "3.3.6"
 	id("io.spring.dependency-management") version "1.1.6"
+	id("org.jetbrains.kotlin.kapt") version "1.8.0"
 	kotlin("plugin.jpa") version "1.9.25"
 }
 
@@ -37,6 +38,7 @@ dependencies {
 	implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor")
 	implementation("org.springframework.cloud:spring-cloud-starter-netflix-eureka-client")
 	implementation("mysql:mysql-connector-java:8.0.33")
+	implementation("com.querydsl:querydsl-jpa:5.0.0:jakarta")
 	compileOnly("org.projectlombok:lombok")
 	annotationProcessor("org.projectlombok:lombok")
 	testImplementation("org.springframework.boot:spring-boot-starter-test")
