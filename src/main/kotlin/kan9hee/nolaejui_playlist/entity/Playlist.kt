@@ -19,6 +19,7 @@ class Playlist(@Column(nullable = false)
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id:Long = 0
 
-    @OneToMany(mappedBy = "playlist", cascade = [CascadeType.ALL], orphanRemoval = true)
-    val playlistMusicRelations:MutableList<PlaylistMusicRelation> = mutableListOf()
+    @OneToMany(cascade = [CascadeType.ALL], orphanRemoval = true)
+    @JoinColumn(name = "playlist_id")
+    val playlistMusicIds:MutableList<PlaylistMusicIds> = mutableListOf()
 }

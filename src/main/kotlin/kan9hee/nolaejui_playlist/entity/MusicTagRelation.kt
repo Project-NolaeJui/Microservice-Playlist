@@ -7,7 +7,11 @@ import lombok.NoArgsConstructor
 @Getter
 @Entity
 @NoArgsConstructor
-@Table(name = "music_tag_relation")
+@Table(name = "music_tag_relation",
+    indexes = [
+        Index(name = "idx_music_tag_relation_music_id", columnList = "music_id"),
+        Index(name = "idx_music_tag_relation_tag_id", columnList = "tag_id")
+    ])
 class MusicTagRelation(@ManyToOne
                        @JoinColumn(name = "music_id", nullable = false)
                        val music: Music,

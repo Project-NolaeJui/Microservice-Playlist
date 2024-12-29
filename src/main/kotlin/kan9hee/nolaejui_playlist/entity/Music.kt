@@ -12,6 +12,8 @@ import java.time.LocalDate
 class Music(@Column(nullable = false)
             val musicTitle:String,
             @Column(nullable = false)
+            val artist:String,
+            @Column(nullable = false)
             val dataType:String,
             @Column
             var dataUrl:String?,
@@ -27,7 +29,7 @@ class Music(@Column(nullable = false)
     val id:Long = 0
 
     @OneToMany(mappedBy = "music", cascade = [CascadeType.ALL], orphanRemoval = true)
-    val playlistMusicRelations: MutableList<PlaylistMusicRelation> = mutableListOf()
+    val playlistMusicIds: MutableList<PlaylistMusicIds> = mutableListOf()
     @OneToMany(mappedBy = "music", cascade = [CascadeType.ALL], orphanRemoval = true)
     val musicTagRelations: MutableList<MusicTagRelation> = mutableListOf()
 }

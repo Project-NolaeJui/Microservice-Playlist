@@ -1,7 +1,7 @@
 package kan9hee.nolaejui_playlist.service
 
 import jakarta.transaction.Transactional
-import kan9hee.nolaejui_playlist.dto.MusicDto
+import kan9hee.nolaejui_playlist.dto.DetailMusicDto
 import kan9hee.nolaejui_playlist.dto.createOnly.MusicCreateDto
 import kan9hee.nolaejui_playlist.entity.*
 import kan9hee.nolaejui_playlist.repository.MusicRepository
@@ -18,6 +18,7 @@ class DataService(private val playlistRepository: PlaylistRepository,
     fun createNewMusic(createInfo: MusicCreateDto){
         val music = Music(
             createInfo.musicTitle,
+            createInfo.artist,
             createInfo.dataType,
             createInfo.dataUrl,
             true,
@@ -38,9 +39,10 @@ class DataService(private val playlistRepository: PlaylistRepository,
     @Transactional
     fun getMusic(musicId:Long){
         musicRepository.findById(musicId).map {
-            MusicDto(
+            DetailMusicDto(
                 id = it.id,
                 musicTitle = it.musicTitle,
+                artist = it.artist,
                 tags = it.musicTagRelations.map { tagRelation -> tagRelation.tag.name },
                 dataType = it.dataType,
                 dataUrl = it.dataUrl,
@@ -76,41 +78,25 @@ class DataService(private val playlistRepository: PlaylistRepository,
     }
 
     @Transactional
-    fun getPlaylist(playlistName:String,playlistOwner:String): List<MusicDto> {
+    fun getPlaylistIds(playlistName:String,playlistOwner:String): List<Long> {
         val playlist = getPlaylistEntity(playlistName, playlistOwner)
 
-        return playlist.playlistMusicRelations.map {
-            MusicDto(
-                id = it.music.id,
-                musicTitle = it.music.musicTitle,
-                tags = it.music.musicTagRelations.map { tagRelation -> tagRelation.tag.name },
-                dataType = it.music.dataType,
-                dataUrl = it.music.dataUrl,
-                isPlayable = it.music.isPlayable,
-                uploadDate = it.music.uploadDate
-            )
-        }
+        return playlist.playlistMusicIds.map { it.musicId }
     }
 
     @Transactional
-    fun addMusicFromPlaylistById(playlistName:String,playlistOwner:String,musicId:Long){
+    fun addMusicIdToPlaylist(playlistName:String,playlistOwner:String,musicId:Long){
         val playlist = getPlaylistEntity(playlistName,playlistOwner)
-        val music = musicRepository.findById(musicId).orElseThrow {
-            IllegalArgumentException("$musicId 에 해당하는 음원이 없습니다.")
-        }
-
-        val relation = PlaylistMusicRelation(playlist,music)
-        playlist.playlistMusicRelations.add(relation)
-        music.playlistMusicRelations.add(relation)
+        playlist.playlistMusicIds.add(PlaylistMusicIds(musicId))
     }
 
     @Transactional
-    fun removeMusicFromPlaylistById(playlistName:String,playlistOwner:String,musicId:Long){
+    fun removeMusicIdFromPlaylist(playlistName:String,playlistOwner:String,musicId:Long){
         val playlist = getPlaylistEntity(playlistName,playlistOwner)
-        val relationToRemove = playlist.playlistMusicRelations.firstOrNull { it.music.id == musicId }
-        relationToRemove?.let {
-            playlist.playlistMusicRelations.remove(it)
-        }
+        val musicIdToRemove = playlist.playlistMusicIds.find { it.musicId == musicId }
+            ?: throw IllegalArgumentException("플레이리스트에 $musicId 정보가 없습니다.")
+
+        playlist.playlistMusicIds.remove(musicIdToRemove)
     }
 
     @Transactional
