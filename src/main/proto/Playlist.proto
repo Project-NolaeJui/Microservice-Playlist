@@ -1,0 +1,77 @@
+syntax = "proto3";
+
+import "google/protobuf/timestamp.proto";
+
+message MusicProblem{
+  MusicInfo musicInfo = 1;
+  string problemCase = 2;
+  string problemDetail = 3;
+}
+
+message MusicInfo{
+  int64 musicId = 1;
+  string musicTitle = 2;
+  string artist = 3;
+  repeated string tags = 4; //List<String>
+  string dataType = 5;
+  string dataUrl = 6;
+  bool isPlayable = 7;
+  string uploaderName = 8;
+  google.protobuf.Timestamp uploadDate = 9; //LocalDate
+}
+
+message PlayLogByLocation{
+  string logId = 1;
+  int64 musicId = 2;
+  string userName = 3;
+  LocationInfo locationInfo = 4;
+}
+
+message UserCD{
+  string userName = 1;
+  bool isCreate = 2;
+}
+
+message AccessToken{
+  string accessToken = 1;
+}
+
+message LocationInfo{
+  double longitude = 1;
+  double latitude = 2;
+}
+
+message PickupResult{
+  repeated int64 musicIds = 1;
+}
+
+message MusicDataId{
+  int64 id = 1;
+}
+
+message GrpcResult{
+  bool isSuccess = 1;
+  string resultMessage = 2;
+}
+
+//other server
+service AdminResponseServer{
+  rpc reportMusicProblem(MusicProblem) returns (GrpcResult){}
+}
+
+service MusicListServer {
+  rpc createAndDeletePlaylistForUser(UserCD) returns (GrpcResult){}
+  rpc deleteMusic(MusicDataId) returns (GrpcResult){}
+  rpc changeMusicInfo(MusicInfo) returns (GrpcResult){}
+}
+
+//other server
+service PlayLogServer {
+  rpc addMusicPlayLog(PlayLogByLocation) returns (GrpcResult){}
+  rpc pickupMusics(LocationInfo) returns (PickupResult){}
+}
+
+//other server
+service AuthServer{
+  rpc getUserName(AccessToken) returns (GrpcResult){}
+}

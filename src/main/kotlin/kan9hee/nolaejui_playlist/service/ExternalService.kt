@@ -1,82 +1,96 @@
 package kan9hee.nolaejui_playlist.service
 
-import com.amazonaws.HttpMethod
-import com.amazonaws.services.s3.AmazonS3
-import com.amazonaws.services.s3.Headers
-import com.amazonaws.services.s3.model.CannedAccessControlList
-import com.amazonaws.services.s3.model.GeneratePresignedUrlRequest
-import kan9hee.nolaejui_playlist.config.S3Config
-import kan9hee.nolaejui_playlist.dto.PlayLogDto
-import org.springframework.core.ParameterizedTypeReference
+import AuthServerGrpcKt
+import PlayLogServerGrpcKt
+import com.google.protobuf.Timestamp
+import kan9hee.nolaejui_playlist.dto.requestOnly.LocationDto
+import kan9hee.nolaejui_playlist.dto.requestOnly.MusicToPlaylistDto
+import kan9hee.nolaejui_playlist.dto.requestOnly.PlayLogDto
+import kan9hee.nolaejui_playlist.dto.requestOnly.ReportProblemDto
+import net.devh.boot.grpc.client.inject.GrpcClient
 import org.springframework.stereotype.Service
-import org.springframework.web.reactive.function.client.WebClient
-import java.util.*
+import java.time.LocalDate
+import java.time.ZoneId
 
 @Service
-class ExternalService(private val webClient: WebClient,
-                      private val s3ValueConfig: S3Config.S3ValueConfig,
-                      private val amazonS3:AmazonS3,
+class ExternalService(@GrpcClient("nolaejui-auth")
+                      private val authStub: AuthServerGrpcKt.AuthServerCoroutineStub,
+                      @GrpcClient("nolaejui-location")
+                      private val playLogStub: PlayLogServerGrpcKt.PlayLogServerCoroutineStub,
+                      @GrpcClient("nolaejui-management")
+                      private val managementStub: AdminResponseServerGrpcKt.AdminResponseServerCoroutineStub,
                       private val dataService: DataService) {
 
-    fun pickupMusic(username:String,longitude:Double,latitude:Double){
-        val response = webClient.get()
-            .uri { uriBuilder ->
-                uriBuilder.path("http://nolaejui-location/getNearbyMusicId")
-                    .queryParam("longitude",longitude)
-                    .queryParam("latitude",latitude)
-                    .build()
-            }
-            .retrieve()
-            .bodyToMono(object : ParameterizedTypeReference<List<Long>>() {})
-            .block()
+    suspend fun getUsername(accessTokenString:String): String {
+        val request = Playlist.AccessToken.newBuilder()
+            .setAccessToken(accessTokenString)
+            .build()
 
-        response?.forEach {
-            dataService.addMusicIdToPlaylist("pickups",username,it)
+        val response = authStub.getUserName(request)
+        if(!response.isSuccess)
+            throw RuntimeException(response.resultMessage)
+
+        return response.resultMessage
+    }
+
+    suspend fun pickupMusics(locationDto:LocationDto){
+        val username = getUsername(locationDto.accessToken)
+
+        val request = Playlist.LocationInfo.newBuilder()
+            .setLongitude(locationDto.longitude)
+            .setLatitude(locationDto.latitude)
+            .build()
+
+        val response = playLogStub.pickupMusics(request)
+        response.musicIdsList.forEach {
+            dataService.addMusicIdToPlaylist(
+                MusicToPlaylistDto("pickup",username,it))
         }
     }
 
-    fun playMusic(playLogDto: PlayLogDto){
-        webClient.post()
-            .uri("http://nolaejui-location/addMusicPlayLog")
-            .bodyValue(playLogDto)
-            .retrieve()
-            .bodyToMono(String::class.java)
-            .block()
+    suspend fun addMusicPlayLog(playLogDto: PlayLogDto){
+        val username = getUsername(playLogDto.locationDto.accessToken)
 
-        return dataService.getMusic(playLogDto.musicId)
+        val request = Playlist.PlayLogByLocation.newBuilder()
+            .setMusicId(playLogDto.musicId)
+            .setUserName(username)
+            .setLocationInfo(
+                Playlist.LocationInfo.newBuilder()
+                    .setLongitude(playLogDto.locationDto.longitude)
+                    .setLatitude(playLogDto.locationDto.latitude)
+            )
+            .build()
+
+        playLogStub.addMusicPlayLog(request)
     }
 
-    fun deleteMusicS3(musicName:String){
-        amazonS3.deleteObject(s3ValueConfig.bucket, s3ValueConfig.folder + musicName)
+    suspend fun reportMusicProblem(reportProblemDto: ReportProblemDto): String {
+        val request = Playlist.MusicProblem.newBuilder()
+            .setMusicInfo(
+                Playlist.MusicInfo.newBuilder()
+                    .setMusicId(reportProblemDto.detailMusicDto.id)
+                    .setMusicTitle(reportProblemDto.detailMusicDto.musicTitle)
+                    .setArtist(reportProblemDto.detailMusicDto.artist)
+                    .addAllTags(reportProblemDto.detailMusicDto.tags)
+                    .setDataType(reportProblemDto.detailMusicDto.dataType)
+                    .setDataUrl(reportProblemDto.detailMusicDto.dataUrl)
+                    .setIsPlayable(reportProblemDto.detailMusicDto.isPlayable)
+                    .setUploaderName(reportProblemDto.detailMusicDto.uploader)
+                    .setUploadDate(convertLocalDateToProtoTimestamp(reportProblemDto.detailMusicDto.uploadDate))
+            )
+            .setProblemCase(reportProblemDto.problemCase)
+            .setProblemDetail(reportProblemDto.problemDetail)
+            .build()
+
+        val response = managementStub.reportMusicProblem(request)
+        return response.resultMessage
     }
 
-    fun getPreSignedUrl(fileName:String): String {
-        val fullPath = createPath(fileName)
-        val generatePreSignedUrlRequest = getGeneratePreSignedUrlRequest(fullPath)
-        val url = amazonS3.generatePresignedUrl(generatePreSignedUrlRequest)
-        return url.toString()
-    }
-
-    private fun getGeneratePreSignedUrlRequest(filePath: String): GeneratePresignedUrlRequest {
-        val generatePreSignedUrlRequest =
-            GeneratePresignedUrlRequest(s3ValueConfig.bucket, filePath)
-                .withMethod(HttpMethod.PUT)
-                .withExpiration(getPreSignedUrlExpiration())
-        generatePreSignedUrlRequest.addRequestParameter(
-            Headers.S3_CANNED_ACL,
-            CannedAccessControlList.PublicRead.toString()
-        )
-        return generatePreSignedUrlRequest
-    }
-
-    private fun getPreSignedUrlExpiration(): Date {
-        val expiration = Date()
-        val expTimeMillis = expiration.time + 1000 * 60
-        expiration.time = expTimeMillis
-        return expiration
-    }
-
-    private fun createPath(fileName: String): String {
-        return java.lang.String.format("%s%s", s3ValueConfig.folder, fileName)
+    private fun convertLocalDateToProtoTimestamp(localDate: LocalDate): Timestamp {
+        val instant = localDate.atStartOfDay(ZoneId.systemDefault()).toInstant()
+        return Timestamp.newBuilder()
+            .setSeconds(instant.epochSecond)
+            .setNanos(instant.nano)
+            .build()
     }
 }
