@@ -1,12 +1,8 @@
 package kan9hee.nolaejui_playlist.entity
 
 import jakarta.persistence.*
-import lombok.Getter
-import lombok.NoArgsConstructor
 
-@Getter
 @Entity
-@NoArgsConstructor
 @Table(name = "music_tag_relation",
     indexes = [
         Index(name = "idx_music_tag_relation_music_id", columnList = "music_id"),

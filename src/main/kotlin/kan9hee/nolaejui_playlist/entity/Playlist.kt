@@ -1,12 +1,8 @@
 package kan9hee.nolaejui_playlist.entity
 
 import jakarta.persistence.*
-import lombok.Getter
-import lombok.NoArgsConstructor
 
-@Getter
 @Entity
-@NoArgsConstructor
 @Table(name = "playlist")
 class Playlist(@Column(nullable = false)
                var playListTitle:String,

@@ -9,4 +9,5 @@ data class DetailMusicDto(val id:Long,
                           val dataType:String,
                           val dataUrl:String?,
                           val isPlayable:Boolean,
+                          val uploader:String,
                           val uploadDate: LocalDate)

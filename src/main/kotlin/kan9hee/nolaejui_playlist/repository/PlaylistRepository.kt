@@ -6,6 +6,7 @@ import org.springframework.stereotype.Repository
 
 @Repository
 interface PlaylistRepository:JpaRepository<Playlist,Long> {
-    fun findByPlaylistNameAndPlaylistOwner(playlistName: String, playlistOwner: String):Playlist
-    fun deleteByPlaylistNameAndPlaylistOwner(playlistName: String, playlistOwner: String)
+    fun findByPlayListTitleAndPlayListOwner(playListTitle: String, playlistOwner: String):Playlist?
+    fun deleteByPlayListTitleAndPlayListOwner(playListTitle: String, playlistOwner: String)
+    fun deleteByPlayListOwner(playlistOwner: String)
 }
