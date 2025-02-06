@@ -1,48 +1,41 @@
 package kan9hee.nolaejui_playlist.config
 
-import com.amazonaws.auth.AWSStaticCredentialsProvider
-import com.amazonaws.auth.BasicAWSCredentials
-import lombok.Data
-import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.boot.context.properties.ConfigurationProperties
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
-import org.springframework.context.annotation.Primary
-import org.springframework.stereotype.Component
-import com.amazonaws.services.s3.AmazonS3
-import com.amazonaws.services.s3.AmazonS3ClientBuilder
+import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
+import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider
+import software.amazon.awssdk.regions.Region
+import software.amazon.awssdk.services.s3.S3Client
+import software.amazon.awssdk.services.s3.presigner.S3Presigner
 
 @Configuration
-class S3Config {
-
-    @Autowired
-    private lateinit var s3ValueConfig: S3ValueConfig
+class S3Config(private val s3ValueConfig: S3ValueConfig) {
 
     @Bean
-    @Primary
-    fun awsCredentialsProvider(): BasicAWSCredentials {
-        return BasicAWSCredentials(s3ValueConfig.accessKey, s3ValueConfig.secretKey)
-    }
-
-    @Bean
-    fun amazonS3(): AmazonS3 {
-        val s3Builder: AmazonS3 = AmazonS3ClientBuilder.standard()
-            .withRegion(s3ValueConfig.region)
-            .withCredentials(AWSStaticCredentialsProvider(awsCredentialsProvider()))
+    fun s3Client(): S3Client {
+        return S3Client.builder()
+            .region(
+                Region.of(s3ValueConfig.region)
+            )
+            .credentialsProvider(
+                StaticCredentialsProvider.create(
+                    AwsBasicCredentials.create(s3ValueConfig.accessKey, s3ValueConfig.secretKey)
+                )
+            )
             .build()
-        return s3Builder
     }
 
-    @Component
-    @ConfigurationProperties(prefix = "aws")
-    @Data
-    class S3ValueConfig {
-        lateinit var accessKey: String
-        lateinit var secretKey: String
-        lateinit var region: String
-        lateinit var bucket: String
-        lateinit var folder: String
-        lateinit var stack: String
-        lateinit var entityBaseURL: String
+    @Bean
+    fun s3Presigner(): S3Presigner {
+        return S3Presigner.builder()
+            .region(
+                Region.of(s3ValueConfig.region)
+            )
+            .credentialsProvider(
+                StaticCredentialsProvider.create(
+                    AwsBasicCredentials.create(s3ValueConfig.accessKey, s3ValueConfig.secretKey)
+                )
+            )
+            .build()
     }
 }
