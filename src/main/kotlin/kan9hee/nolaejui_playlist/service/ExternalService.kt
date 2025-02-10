@@ -5,7 +5,6 @@ import PlayLogServerGrpcKt
 import com.google.protobuf.Timestamp
 import kan9hee.nolaejui_playlist.dto.requestOnly.LocationDto
 import kan9hee.nolaejui_playlist.dto.requestOnly.MusicToPlaylistDto
-import kan9hee.nolaejui_playlist.dto.requestOnly.PlayLogDto
 import kan9hee.nolaejui_playlist.dto.requestOnly.ReportProblemDto
 import net.devh.boot.grpc.client.inject.GrpcClient
 import org.springframework.stereotype.Service
@@ -34,8 +33,6 @@ class ExternalService(@GrpcClient("nolaejui-auth")
     }
 
     suspend fun pickupMusics(locationDto:LocationDto){
-        val username = getUsername(locationDto.accessToken)
-
         val request = Playlist.LocationInfo.newBuilder()
             .setLongitude(locationDto.longitude)
             .setLatitude(locationDto.latitude)
@@ -44,24 +41,8 @@ class ExternalService(@GrpcClient("nolaejui-auth")
         val response = playLogStub.pickupMusics(request)
         response.musicIdsList.forEach {
             dataService.addMusicIdToPlaylist(
-                MusicToPlaylistDto("pickup",username,it))
+                MusicToPlaylistDto("pickup",locationDto.userName,it))
         }
-    }
-
-    suspend fun addMusicPlayLog(playLogDto: PlayLogDto){
-        val username = getUsername(playLogDto.locationDto.accessToken)
-
-        val request = Playlist.PlayLogByLocation.newBuilder()
-            .setMusicId(playLogDto.musicId)
-            .setUserName(username)
-            .setLocationInfo(
-                Playlist.LocationInfo.newBuilder()
-                    .setLongitude(playLogDto.locationDto.longitude)
-                    .setLatitude(playLogDto.locationDto.latitude)
-            )
-            .build()
-
-        playLogStub.addMusicPlayLog(request)
     }
 
     suspend fun reportMusicProblem(reportProblemDto: ReportProblemDto): String {

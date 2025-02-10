@@ -2,7 +2,7 @@ package kan9hee.nolaejui_playlist.dto.requestOnly
 
 import java.time.LocalDate
 
-data class MusicDataInputDto(val accessToken:String,
+data class MusicDataInputDto(val userName:String,
                              val id:Long?,
                              val musicTitle:String,
                              val artist:String,
