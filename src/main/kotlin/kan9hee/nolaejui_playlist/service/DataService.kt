@@ -4,7 +4,6 @@ import jakarta.transaction.Transactional
 import kan9hee.nolaejui_playlist.component.JwtTokenComponent
 import kan9hee.nolaejui_playlist.dto.DetailMusicDto
 import kan9hee.nolaejui_playlist.dto.SearchOptionDto
-import kan9hee.nolaejui_playlist.dto.SummaryMusicDto
 import kan9hee.nolaejui_playlist.dto.requestOnly.*
 import kan9hee.nolaejui_playlist.entity.*
 import kan9hee.nolaejui_playlist.repository.MusicRepository
@@ -33,9 +32,9 @@ class DataService(private val jwtTokenComponent: JwtTokenComponent,
             uploader,
             createInfo.uploadDate
         )
+        musicRepository.save(music)
 
         addMusicAndTagRelation(createInfo.tags,music)
-        musicRepository.save(music)
     }
 
     @Transactional
