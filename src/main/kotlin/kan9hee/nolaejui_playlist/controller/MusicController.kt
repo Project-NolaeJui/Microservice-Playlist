@@ -2,10 +2,8 @@ package kan9hee.nolaejui_playlist.controller
 
 import kan9hee.nolaejui_playlist.dto.DetailMusicDto
 import kan9hee.nolaejui_playlist.dto.SearchOptionDto
-import kan9hee.nolaejui_playlist.dto.SummaryMusicDto
 import kan9hee.nolaejui_playlist.dto.requestOnly.MusicDataInputDto
 import kan9hee.nolaejui_playlist.dto.requestOnly.MusicDeleteDto
-import kan9hee.nolaejui_playlist.dto.requestOnly.PlayLogDto
 import kan9hee.nolaejui_playlist.dto.requestOnly.ReportProblemDto
 import kan9hee.nolaejui_playlist.service.AwsService
 import kan9hee.nolaejui_playlist.service.DataService
@@ -26,7 +24,15 @@ class MusicController(private val dataService: DataService,
     }
 
     @GetMapping("/searchMusic")
-    fun searchMusic(@RequestParam(value = "searchOption") searchOption: SearchOptionDto): List<SummaryMusicDto> {
+    fun searchMusic(
+        @RequestParam(value = "musicTitle", required = false) musicTitle: String?,
+        @RequestParam(value = "artist", required = false) artist: String?,
+        @RequestParam(value = "dataType", required = false) dataType: String?,
+        @RequestParam(value = "tags", required = false) tags: List<String>?,
+        @RequestParam(value = "page") page: Int,
+        @RequestParam(value = "ids", required = false) ids: List<Long>?
+    ): List<DetailMusicDto> {
+        val searchOption = SearchOptionDto(ids, musicTitle, artist, dataType, tags, page)
         return searchService.searchMusicByOverall(searchOption)
     }
 
@@ -38,11 +44,6 @@ class MusicController(private val dataService: DataService,
     @PostMapping("/registerMusic")
     suspend fun registerMusic(@RequestBody musicDataInputDto: MusicDataInputDto) {
         return dataService.createUsersMusic(musicDataInputDto)
-    }
-
-    @PostMapping("/addMusicPlayLog")
-    suspend fun addMusicPlayLog(@RequestBody playLogDto: PlayLogDto) {
-        externalService.addMusicPlayLog(playLogDto)
     }
 
     @PostMapping("/changeMusicInfo")

@@ -1,6 +1,6 @@
 package kan9hee.nolaejui_playlist.controller
 
-import kan9hee.nolaejui_playlist.dto.SummaryMusicDto
+import kan9hee.nolaejui_playlist.dto.DetailMusicDto
 import kan9hee.nolaejui_playlist.dto.requestOnly.*
 import kan9hee.nolaejui_playlist.service.DataService
 import kan9hee.nolaejui_playlist.service.ExternalService
@@ -12,8 +12,13 @@ class PlayListController(private val dataService: DataService,
                          private val externalService: ExternalService) {
 
     @GetMapping("/getPlaylistMusicIds")
-    suspend fun getPlaylistMusicIds(@RequestParam(value = "playlist") playlistReadDto:PlaylistReadDto): List<SummaryMusicDto> {
-        return dataService.getPlaylistMusics(playlistReadDto)
+    suspend fun getPlaylistMusicIds(
+        @RequestParam(value = "userName") userName:String,
+        @RequestParam(value = "playlistName") playlistName: String,
+        @RequestParam(value = "page") page: Int
+    ): List<DetailMusicDto> {
+        val playlistInfo = PlaylistReadDto(userName,playlistName,page)
+        return dataService.getPlaylistMusics(playlistInfo)
     }
 
     @PostMapping("/addNewPlaylist")
