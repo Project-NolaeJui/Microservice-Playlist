@@ -2,8 +2,8 @@ package kan9hee.nolaejui_playlist.service
 
 import co.elastic.clients.elasticsearch._types.FieldValue
 import co.elastic.clients.elasticsearch._types.query_dsl.Query
+import kan9hee.nolaejui_playlist.dto.DetailMusicDto
 import kan9hee.nolaejui_playlist.dto.SearchOptionDto
-import kan9hee.nolaejui_playlist.dto.SummaryMusicDto
 import kan9hee.nolaejui_playlist.entity.elasticSearch.MusicSearch
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.elasticsearch.client.elc.NativeQuery
@@ -13,7 +13,7 @@ import org.springframework.stereotype.Service
 @Service
 class SearchService(private val elasticsearchOperations:ElasticsearchOperations) {
 
-    fun searchMusicByOverall(searchOptionDto: SearchOptionDto): List<SummaryMusicDto> {
+    fun searchMusicByOverall(searchOptionDto: SearchOptionDto): List<DetailMusicDto> {
         val mustQueries = mutableListOf<Query>()
 
         searchOptionDto.ids?.let { ids ->
@@ -48,10 +48,16 @@ class SearchService(private val elasticsearchOperations:ElasticsearchOperations)
             .map { it.content }
 
         val resultList = searchResult.map {
-            SummaryMusicDto(
+            DetailMusicDto(
                 it.id,
                 it.musicTitle,
-                it.artist
+                it.artist,
+                it.tags,
+                it.dataType,
+                it.dataUrl,
+                it.isPlayable,
+                it.uploader,
+                it.uploadDate
             )
         }.toList()
 
