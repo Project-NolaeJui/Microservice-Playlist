@@ -27,9 +27,8 @@ message PlayLogByLocation{
   LocationInfo locationInfo = 4;
 }
 
-message UserCD{
+message UserName{
   string userName = 1;
-  bool isCreate = 2;
 }
 
 message AccessToken{
@@ -60,7 +59,8 @@ service AdminResponseServer{
 }
 
 service MusicListServer {
-  rpc createAndDeletePlaylistForUser(UserCD) returns (GrpcResult){}
+  rpc createDefaultPickupPlaylist(UserName) returns (GrpcResult){}
+  rpc deleteUsersAllPlaylist(UserName) returns (GrpcResult){}
   rpc deleteMusic(MusicDataId) returns (GrpcResult){}
   rpc changeMusicInfo(MusicInfo) returns (GrpcResult){}
 }

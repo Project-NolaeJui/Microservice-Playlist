@@ -11,23 +11,34 @@ class GrpcService(private val musicRepository:MusicRepository,
                   private val dataService: DataService)
     :MusicListServerGrpcKt.MusicListServerCoroutineImplBase() {
 
-    override suspend fun createAndDeletePlaylistForUser(request: Playlist.UserCD): Playlist.GrpcResult {
+    override suspend fun createDefaultPickupPlaylist(request: Playlist.UserName): Playlist.GrpcResult {
         try {
-            if(request.isCreate){
-                dataService.createDefaultUserPlaylist(request.userName)
-                return withContext(Dispatchers.Default) {
-                    Playlist.GrpcResult.newBuilder()
-                        .setIsSuccess(true)
-                        .setResultMessage("${request.userName}의 픽업용 플레이리스트가 생성되었습니다.")
-                        .build()
-                }
-            }
+            dataService.createDefaultUserPlaylist(request.userName)
 
-            dataService.deleteUsersAllPlaylist(request.userName)
             return withContext(Dispatchers.Default) {
                 Playlist.GrpcResult.newBuilder()
                     .setIsSuccess(true)
-                    .setResultMessage("${request.userName}의 모든 플레이리스트가 생성되었습니다.")
+                    .setResultMessage("${request.userName}의 픽업용 플레이리스트가 생성되었습니다.")
+                    .build()
+            }
+        } catch (e: IllegalArgumentException) {
+            return withContext(Dispatchers.Default) {
+                Playlist.GrpcResult.newBuilder()
+                    .setIsSuccess(false)
+                    .setResultMessage("${request.userName}의 플레이리스트 처리 중 오류가 발생했습니다. 사유: $e")
+                    .build()
+            }
+        }
+    }
+
+    override suspend fun deleteUsersAllPlaylist (request: Playlist.UserName): Playlist.GrpcResult {
+        try {
+            dataService.deleteUsersAllPlaylist(request.userName)
+
+            return withContext(Dispatchers.Default) {
+                Playlist.GrpcResult.newBuilder()
+                    .setIsSuccess(true)
+                    .setResultMessage("${request.userName}의 모든 플레이리스트가 삭제되었습니다.")
                     .build()
             }
         } catch (e: IllegalArgumentException) {
