@@ -1,7 +1,7 @@
 package kan9hee.nolaejui_playlist.entity
 
 import jakarta.persistence.*
-import java.time.LocalDate
+import java.time.LocalDateTime
 
 @Entity
 @Table(name = "music")
@@ -18,7 +18,7 @@ class Music(@Column(nullable = false)
             @Column(nullable = false)
             var uploader:String,
             @Column(nullable = false)
-            var uploadDate:LocalDate) {
+            var uploadDate:LocalDateTime) {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

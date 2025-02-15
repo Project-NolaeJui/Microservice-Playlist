@@ -1,6 +1,6 @@
 package kan9hee.nolaejui_playlist.dto.requestOnly
 
-import java.time.LocalDate
+import java.time.LocalDateTime
 
 data class MusicDataInputDto(val userName:String,
                              val id:Long?,
@@ -10,4 +10,4 @@ data class MusicDataInputDto(val userName:String,
                              val dataType:String,
                              val dataUrl:String?,
                              val isPlayable:Boolean,
-                             val uploadDate: LocalDate)
+                             val uploadDate: LocalDateTime)

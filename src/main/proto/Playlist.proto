@@ -12,12 +12,12 @@ message MusicInfo{
   int64 musicId = 1;
   string musicTitle = 2;
   string artist = 3;
-  repeated string tags = 4; //List<String>
+  repeated string tags = 4;
   string dataType = 5;
   string dataUrl = 6;
   bool isPlayable = 7;
   string uploaderName = 8;
-  google.protobuf.Timestamp uploadDate = 9; //LocalDate
+  google.protobuf.Timestamp uploadDate = 9;
 }
 
 message PlayLogByLocation{

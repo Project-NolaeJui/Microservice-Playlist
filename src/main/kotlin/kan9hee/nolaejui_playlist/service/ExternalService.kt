@@ -8,8 +8,8 @@ import kan9hee.nolaejui_playlist.dto.requestOnly.MusicToPlaylistDto
 import kan9hee.nolaejui_playlist.dto.requestOnly.ReportProblemDto
 import net.devh.boot.grpc.client.inject.GrpcClient
 import org.springframework.stereotype.Service
-import java.time.LocalDate
-import java.time.ZoneId
+import java.time.LocalDateTime
+import java.time.ZoneOffset
 
 @Service
 class ExternalService(@GrpcClient("nolaejui-auth")
@@ -54,24 +54,30 @@ class ExternalService(@GrpcClient("nolaejui-auth")
                     .setArtist(reportProblemDto.detailMusicDto.artist)
                     .addAllTags(reportProblemDto.detailMusicDto.tags)
                     .setDataType(reportProblemDto.detailMusicDto.dataType)
-                    .setDataUrl(reportProblemDto.detailMusicDto.dataUrl)
+                    .setDataUrl(reportProblemDto.detailMusicDto.dataUrl ?: "")
                     .setIsPlayable(reportProblemDto.detailMusicDto.isPlayable)
                     .setUploaderName(reportProblemDto.detailMusicDto.uploader)
-                    .setUploadDate(convertLocalDateToProtoTimestamp(reportProblemDto.detailMusicDto.uploadDate))
+                    .setUploadDate(convertLocalDateTimeToProtoTimestamp(reportProblemDto.detailMusicDto.uploadDate))
             )
             .setProblemCase(reportProblemDto.problemCase)
             .setProblemDetail(reportProblemDto.problemDetail)
             .build()
 
-        val response = managementStub.reportMusicProblem(request)
-        return response.resultMessage
+        return try {
+            val response = managementStub.reportMusicProblem(request)
+            response.resultMessage
+        }catch (e: Exception) {
+            e.printStackTrace()
+            throw e
+        }
     }
 
-    private fun convertLocalDateToProtoTimestamp(localDate: LocalDate): Timestamp {
-        val instant = localDate.atStartOfDay(ZoneId.systemDefault()).toInstant()
-        return Timestamp.newBuilder()
+    private fun convertLocalDateTimeToProtoTimestamp(localDateTime: LocalDateTime): Timestamp {
+        val instant = localDateTime.toInstant(ZoneOffset.UTC)
+        val result =  Timestamp.newBuilder()
             .setSeconds(instant.epochSecond)
             .setNanos(instant.nano)
             .build()
+        return result
     }
 }

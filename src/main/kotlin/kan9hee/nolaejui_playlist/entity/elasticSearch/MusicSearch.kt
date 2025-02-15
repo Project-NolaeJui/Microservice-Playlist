@@ -5,27 +5,27 @@ import org.springframework.data.elasticsearch.annotations.DateFormat
 import org.springframework.data.elasticsearch.annotations.Document
 import org.springframework.data.elasticsearch.annotations.Field
 import org.springframework.data.elasticsearch.annotations.FieldType
-import java.time.LocalDate
+import java.time.LocalDateTime
 
 @Document(indexName = "elasticmusic")
 class MusicSearch(@Id
-                  @Field(name = "id", type = FieldType.Keyword)
+                  @Field(name = "id", type = FieldType.Long)
                     val id: Long,
                   @Field(type = FieldType.Text)
-                    val musicTitle: String,
+                    val music_title: String,
                   @Field(type = FieldType.Text)
                     val artist:String,
-                  @Field(type = FieldType.Keyword)
-                    val tags: List<String>,
-                  @Field(type = FieldType.Keyword)
-                    val dataType: String,
                   @Field(type = FieldType.Text)
-                    val dataUrl: String?,
+                    val tags: List<String>,
+                  @Field(type = FieldType.Text)
+                    val data_type: String,
+                  @Field(type = FieldType.Text)
+                    val data_url: String?,
                   @Field(type = FieldType.Boolean)
-                    val isPlayable: Boolean,
-                  @Field(type = FieldType.Keyword)
+                    val is_playable: Boolean,
+                  @Field(type = FieldType.Text)
                     val uploader: String,
-                  @Field(type = FieldType.Date, format = [DateFormat.year_month_day])
-                    val uploadDate: LocalDate
+                  @Field(type = FieldType.Date, format = [DateFormat.date_optional_time])
+                  val upload_date: LocalDateTime
 ) {
 }
