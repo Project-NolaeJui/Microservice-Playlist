@@ -21,19 +21,18 @@ class SearchService(private val elasticsearchOperations:ElasticsearchOperations)
             mustQueries.add(Query.of { q -> q.terms { t -> t.field("id").terms { v -> v.value(fieldValues) } } })
         }
         searchOptionDto.musicTitle?.let {
-            mustQueries.add(Query.of { q -> q.fuzzy { f -> f.field("musicTitle").value(it).fuzziness("AUTO") } })
+            mustQueries.add(Query.of { q -> q.match { m -> m.field("music_title").query(it) } })
         }
         searchOptionDto.artist?.let {
             mustQueries.add(Query.of { q -> q.fuzzy { f -> f.field("artist").value(it).fuzziness("AUTO") } })
         }
         searchOptionDto.dataType?.let { dataType ->
-            val fieldValues = dataType.map { FieldValue.of(it) }
-            mustQueries.add(Query.of { q -> q.terms { t -> t.field("dataType").terms { v -> v.value(fieldValues) } } })
+            mustQueries.add(Query.of { q -> q.term { t -> t.field("data_type").value(dataType) } })
         }
         searchOptionDto.tags?.let { tags ->
-            val fieldValues = tags.map { FieldValue.of(it) }
-            mustQueries.add(Query.of { q -> q.terms { t -> t.field("tags").terms { v -> v.value(fieldValues) } } })
+            mustQueries.add(Query.of { q -> q.match { m -> m.field("tags").query(tags.joinToString(" ")) } })
         }
+        mustQueries.add(Query.of { q -> q.term { t -> t.field("is_playable").value(true) } })
 
         val mustQuery = Query.of { q -> q.bool { b -> b.must(mustQueries) } }
         val pageable = PageRequest.of(searchOptionDto.page,30)
@@ -50,14 +49,14 @@ class SearchService(private val elasticsearchOperations:ElasticsearchOperations)
         val resultList = searchResult.map {
             DetailMusicDto(
                 it.id,
-                it.musicTitle,
+                it.music_title,
                 it.artist,
                 it.tags,
-                it.dataType,
-                it.dataUrl,
-                it.isPlayable,
+                it.data_type,
+                it.data_url,
+                it.is_playable,
                 it.uploader,
-                it.uploadDate
+                it.upload_date
             )
         }.toList()
 
