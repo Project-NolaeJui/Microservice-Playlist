@@ -5,6 +5,7 @@ import kan9hee.nolaejui_playlist.dto.DetailMusicDto
 import kan9hee.nolaejui_playlist.dto.SearchOptionDto
 import kan9hee.nolaejui_playlist.dto.requestOnly.*
 import kan9hee.nolaejui_playlist.entity.*
+import kan9hee.nolaejui_playlist.repository.ListedMusicIdRepository
 import kan9hee.nolaejui_playlist.repository.MusicRepository
 import kan9hee.nolaejui_playlist.repository.PlaylistRepository
 import kan9hee.nolaejui_playlist.repository.TagRepository
@@ -14,6 +15,7 @@ import org.springframework.stereotype.Service
 class DataService(private val playlistRepository: PlaylistRepository,
                   private val musicRepository: MusicRepository,
                   private val tagRepository: TagRepository,
+                  private val listedMusicIdRepository: ListedMusicIdRepository,
                   private val awsService: AwsService,
                   private val searchService: SearchService) {
 
@@ -35,12 +37,15 @@ class DataService(private val playlistRepository: PlaylistRepository,
 
     @Transactional
     fun addMusicAndTagRelation(tags:List<String>,music:Music){
-        tags.forEach{ tagName ->
-            val tag = tagRepository.findByName(tagName) ?: tagRepository.save(Tag(tagName))
-            val relation = MusicTagRelation(music,tag)
-            music.musicTagRelations.add(relation)
-            tag.musicTagRelations.add(relation)
-        }
+        val existingTags = tagRepository.findByNameIn(tags).associateBy { it.name }
+        val newTags = tags.filter { it !in existingTags }
+            .map { Tag(it) }
+            .let { tagRepository.saveAll(it) }
+            .associateBy{ it.name }
+        val allTags = existingTags + newTags
+
+        val relations = allTags.values.map { tag -> MusicTagRelation(music,tag) }
+        music.musicTagRelations.addAll(relations)
     }
 
     @Transactional
@@ -132,9 +137,15 @@ class DataService(private val playlistRepository: PlaylistRepository,
     }
 
     @Transactional
-    suspend fun addMusicIdToPlaylist(musicToPlaylistDto: MusicToPlaylistDto){
-        val playlist = getPlaylistEntity(musicToPlaylistDto.playlistName,musicToPlaylistDto.userName)
-        playlist.playlistMusicIds.add(PlaylistMusicIds(musicToPlaylistDto.musicId))
+    suspend fun addMusicIdsToPlaylist(playlistName:String, userName:String, musicsIds: MutableList<Long>){
+        val playlist = getPlaylistEntity(playlistName,userName)
+
+        val existingIds = listedMusicIdRepository.findByMusicIdIn(musicsIds)
+        val newIdValues = musicsIds.filterNot { values -> values in existingIds.map { it.musicId } }
+        val newPlaylistMusicIds = newIdValues.map { PlaylistMusicIds(it) }
+
+        val insertIds = existingIds + newPlaylistMusicIds
+        playlist.playlistMusicIds.addAll(insertIds)
     }
 
     @Transactional

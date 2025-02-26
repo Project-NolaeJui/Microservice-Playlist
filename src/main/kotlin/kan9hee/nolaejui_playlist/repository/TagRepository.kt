@@ -7,4 +7,5 @@ import org.springframework.stereotype.Repository
 @Repository
 interface TagRepository:JpaRepository<Tag,Long> {
     fun findByName(name: String):Tag?
+    fun findByNameIn(names: List<String>):List<Tag>
 }

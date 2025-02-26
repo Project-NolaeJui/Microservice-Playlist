@@ -4,7 +4,6 @@ import AuthServerGrpcKt
 import PlayLogServerGrpcKt
 import com.google.protobuf.Timestamp
 import kan9hee.nolaejui_playlist.dto.requestOnly.LocationDto
-import kan9hee.nolaejui_playlist.dto.requestOnly.MusicToPlaylistDto
 import kan9hee.nolaejui_playlist.dto.requestOnly.ReportProblemDto
 import net.devh.boot.grpc.client.inject.GrpcClient
 import org.springframework.stereotype.Service
@@ -39,10 +38,7 @@ class ExternalService(@GrpcClient("nolaejui-auth")
             .build()
 
         val response = playLogStub.pickupMusics(request)
-        response.musicIdsList.forEach {
-            dataService.addMusicIdToPlaylist(
-                MusicToPlaylistDto("pickup",locationDto.userName,it))
-        }
+        dataService.addMusicIdsToPlaylist("pickup",locationDto.userName,response.musicIdsList)
     }
 
     suspend fun reportMusicProblem(reportProblemDto: ReportProblemDto): String {
