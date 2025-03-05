@@ -24,6 +24,9 @@ class Music(@Column(nullable = false)
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id:Long = 0
 
+    @Column(nullable = false)
+    var viewCount:Int = 0
+
     @OneToMany(mappedBy = "music", cascade = [CascadeType.ALL], orphanRemoval = true)
     val musicTagRelations: MutableList<MusicTagRelation> = mutableListOf()
 }

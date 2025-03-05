@@ -67,7 +67,6 @@ service MusicListServer {
 
 //other server
 service PlayLogServer {
-  rpc addMusicPlayLog(PlayLogByLocation) returns (GrpcResult){}
   rpc pickupMusics(LocationInfo) returns (PickupResult){}
 }
 

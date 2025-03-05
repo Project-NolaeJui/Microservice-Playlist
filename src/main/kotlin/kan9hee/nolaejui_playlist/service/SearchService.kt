@@ -2,18 +2,30 @@ package kan9hee.nolaejui_playlist.service
 
 import co.elastic.clients.elasticsearch._types.FieldValue
 import co.elastic.clients.elasticsearch._types.query_dsl.Query
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import com.fasterxml.jackson.module.kotlin.readValue
 import kan9hee.nolaejui_playlist.dto.DetailMusicDto
 import kan9hee.nolaejui_playlist.dto.SearchOptionDto
 import kan9hee.nolaejui_playlist.entity.elasticSearch.MusicSearch
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.elasticsearch.client.elc.NativeQuery
 import org.springframework.data.elasticsearch.core.ElasticsearchOperations
+import org.springframework.data.redis.core.StringRedisTemplate
 import org.springframework.stereotype.Service
+import java.util.concurrent.TimeUnit
 
 @Service
-class SearchService(private val elasticsearchOperations:ElasticsearchOperations) {
+class SearchService(private val elasticsearchOperations:ElasticsearchOperations,
+                    private val redisTemplate: StringRedisTemplate) {
 
     fun searchMusicByOverall(searchOptionDto: SearchOptionDto): List<DetailMusicDto> {
+
+        val cacheKey = "music_search:" + searchOptionDto.toString().hashCode()
+        val cachedResult = redisTemplate.opsForValue().get(cacheKey)
+        cachedResult?.let {
+            return jacksonObjectMapper().readValue(cachedResult)
+        }
+
         val mustQueries = mutableListOf<Query>()
 
         searchOptionDto.ids?.let { ids ->
@@ -59,6 +71,13 @@ class SearchService(private val elasticsearchOperations:ElasticsearchOperations)
                 it.upload_date
             )
         }.toList()
+
+        redisTemplate.opsForValue().set(
+            cacheKey,
+            jacksonObjectMapper().writeValueAsString(resultList),
+            5,
+            TimeUnit.MINUTES
+        )
 
         return resultList
     }
