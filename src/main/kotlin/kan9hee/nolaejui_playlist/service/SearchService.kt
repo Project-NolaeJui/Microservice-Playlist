@@ -2,12 +2,13 @@ package kan9hee.nolaejui_playlist.service
 
 import co.elastic.clients.elasticsearch._types.FieldValue
 import co.elastic.clients.elasticsearch._types.query_dsl.Query
+import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import kan9hee.nolaejui_playlist.dto.DetailMusicDto
 import kan9hee.nolaejui_playlist.dto.SearchOptionDto
 import kan9hee.nolaejui_playlist.entity.elasticSearch.MusicSearch
-import org.springframework.data.domain.PageRequest
+import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.elasticsearch.client.elc.NativeQuery
 import org.springframework.data.elasticsearch.core.ElasticsearchOperations
 import org.springframework.data.redis.core.StringRedisTemplate
@@ -15,7 +16,9 @@ import org.springframework.stereotype.Service
 import java.util.concurrent.TimeUnit
 
 @Service
-class SearchService(private val elasticsearchOperations:ElasticsearchOperations,
+class SearchService(@Autowired
+                    private val objectMapper: ObjectMapper,
+                    private val elasticsearchOperations:ElasticsearchOperations,
                     private val redisTemplate: StringRedisTemplate) {
 
     fun searchMusicByOverall(searchOptionDto: SearchOptionDto): List<DetailMusicDto> {
@@ -47,18 +50,16 @@ class SearchService(private val elasticsearchOperations:ElasticsearchOperations,
         mustQueries.add(Query.of { q -> q.term { t -> t.field("is_playable").value(true) } })
 
         val mustQuery = Query.of { q -> q.bool { b -> b.must(mustQueries) } }
-        val pageable = PageRequest.of(searchOptionDto.page,30)
 
         val searchQuery = NativeQuery.builder()
             .withQuery(mustQuery)
-            .withPageable(pageable)
             .build()
 
         val searchResult = elasticsearchOperations
             .search(searchQuery, MusicSearch::class.java)
             .map { it.content }
 
-        val resultList = searchResult.map {
+        val allResults = searchResult.map {
             DetailMusicDto(
                 it.id,
                 it.music_title,
@@ -70,15 +71,20 @@ class SearchService(private val elasticsearchOperations:ElasticsearchOperations,
                 it.uploader,
                 it.upload_date
             )
-        }.toList()
+        }
+        val distinctResults = allResults.distinctBy { it.id }
+
+        val start = searchOptionDto.page * 30
+        val end = ((searchOptionDto.page + 1) * 30) - 1
+        val paginatedResults = distinctResults.subList(start, end.coerceAtMost(distinctResults.size))
 
         redisTemplate.opsForValue().set(
             cacheKey,
-            jacksonObjectMapper().writeValueAsString(resultList),
+            objectMapper.writeValueAsString(paginatedResults),
             5,
             TimeUnit.MINUTES
         )
 
-        return resultList
+        return paginatedResults
     }
 }
