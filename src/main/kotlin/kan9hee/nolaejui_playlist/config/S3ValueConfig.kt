@@ -12,6 +12,4 @@ class S3ValueConfig {
     lateinit var region: String
     lateinit var bucket: String
     lateinit var folder: String
-    lateinit var stack: String
-    lateinit var entityBaseURL: String
 }
