@@ -5,7 +5,6 @@ plugins {
 	kotlin("plugin.spring") version "1.9.25"
 	id("org.springframework.boot") version "3.3.6"
 	id("io.spring.dependency-management") version "1.1.6"
-	id("org.jetbrains.kotlin.kapt") version "1.8.0"
 	id("com.google.protobuf") version "0.9.4"
 	kotlin("plugin.jpa") version "1.9.25"
 }
@@ -47,6 +46,10 @@ dependencies {
 	implementation("io.jsonwebtoken:jjwt-api:0.12.6")
 	implementation("io.jsonwebtoken:jjwt-impl:0.12.6")
 	implementation("io.jsonwebtoken:jjwt-jackson:0.12.6")
+	implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
+	implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310")
+	implementation("com.linecorp.kotlin-jdsl:kotlin-jdsl:3.5.5")
+	implementation("com.linecorp.kotlin-jdsl:spring-data-kotlin-jdsl-starter-jakarta:2.2.1.RELEASE")
 
 	implementation("io.grpc:grpc-protobuf:1.68.2")
 	implementation("io.grpc:grpc-netty:1.68.2")

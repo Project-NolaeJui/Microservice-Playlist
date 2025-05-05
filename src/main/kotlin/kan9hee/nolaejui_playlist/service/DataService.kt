@@ -5,17 +5,14 @@ import kan9hee.nolaejui_playlist.dto.DetailMusicDto
 import kan9hee.nolaejui_playlist.dto.SearchOptionDto
 import kan9hee.nolaejui_playlist.dto.requestOnly.*
 import kan9hee.nolaejui_playlist.entity.*
-import kan9hee.nolaejui_playlist.repository.ListedMusicIdRepository
-import kan9hee.nolaejui_playlist.repository.MusicRepository
-import kan9hee.nolaejui_playlist.repository.PlaylistRepository
-import kan9hee.nolaejui_playlist.repository.TagRepository
+import kan9hee.nolaejui_playlist.repository.*
 import org.springframework.stereotype.Service
 
 @Service
 class DataService(private val playlistRepository: PlaylistRepository,
+                  private val playlistRepositoryCustomImpl:PlaylistRepositoryCustomImpl,
                   private val musicRepository: MusicRepository,
                   private val tagRepository: TagRepository,
-                  private val listedMusicIdRepository: ListedMusicIdRepository,
                   private val awsService: AwsService,
                   private val searchService: SearchService) {
 
@@ -30,9 +27,8 @@ class DataService(private val playlistRepository: PlaylistRepository,
             createInfo.userName,
             createInfo.uploadDate
         )
-        musicRepository.save(music)
-
         addMusicAndTagRelation(createInfo.tags,music)
+        musicRepository.save(music)
     }
 
     @Transactional
@@ -53,15 +49,15 @@ class DataService(private val playlistRepository: PlaylistRepository,
         val music = findMusicEntity(musicId)
 
         return DetailMusicDto(
-            id = music.id,
-            musicTitle = music.musicTitle,
-            artist = music.artist,
-            tags = music.musicTagRelations.map { tagRelation -> tagRelation.tag.name },
-            dataType = music.dataType,
-            dataUrl = music.dataUrl,
-            isPlayable = music.isPlayable,
-            uploader = music.uploader,
-            uploadDate = music.uploadDate
+            music.id,
+            music.musicTitle,
+            music.artist,
+            music.musicTagRelations.map { tagRelation -> tagRelation.tag.name },
+            music.dataType,
+            music.dataUrl,
+            music.isPlayable,
+            music.uploader,
+            music.uploadDate
         )
     }
 
@@ -89,6 +85,7 @@ class DataService(private val playlistRepository: PlaylistRepository,
 
             music.musicTagRelations.clear()
             addMusicAndTagRelation(changeInfo.tags,music)
+            musicRepository.save(music)
         }
     }
 
@@ -140,12 +137,12 @@ class DataService(private val playlistRepository: PlaylistRepository,
     suspend fun addMusicIdsToPlaylist(playlistName:String, userName:String, musicsIds: MutableList<Long>){
         val playlist = getPlaylistEntity(playlistName,userName)
 
-        val existingIds = listedMusicIdRepository.findByMusicIdIn(musicsIds)
-        val newIdValues = musicsIds.filterNot { values -> values in existingIds.map { it.musicId } }
-        val newPlaylistMusicIds = newIdValues.map { PlaylistMusicIds(it) }
+        val existingMusicIdsInPlaylist = playlist.playlistMusicIds.map { it.musicId }.toSet()
+        val newMusicIds = musicsIds.filterNot { it in existingMusicIdsInPlaylist }
+        val newPlaylistMusicIds = newMusicIds.map { PlaylistMusicIds(it) }
 
-        val insertIds = existingIds + newPlaylistMusicIds
-        playlist.playlistMusicIds.addAll(insertIds)
+        playlist.playlistMusicIds.addAll(newPlaylistMusicIds)
+        playlistRepository.save(playlist)
     }
 
     @Transactional
@@ -186,8 +183,8 @@ class DataService(private val playlistRepository: PlaylistRepository,
     }
 
     @Transactional
-    private fun getPlaylistEntity(playlistName:String,playlistOwner:String): Playlist {
-        val result = playlistRepository.findByPlayListTitleAndPlayListOwner(playlistName, playlistOwner)
+    private fun getPlaylistEntity(playlistName: String, playlistOwner: String): Playlist {
+        val result = playlistRepositoryCustomImpl.findWithMusicIdsByTitleAndOwner(playlistName, playlistOwner)
             ?: throw IllegalArgumentException("$playlistOwner 의 $playlistName 에 따른 정보가 없습니다.")
         return result
     }
