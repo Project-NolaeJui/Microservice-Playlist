@@ -12,7 +12,7 @@ import kan9hee.nolaejui_playlist.service.SearchService
 import org.springframework.web.bind.annotation.*
 
 @RestController
-@RequestMapping("/playlist/api/music")
+@RequestMapping("/playlist/music")
 class MusicController(private val dataService: DataService,
                       private val externalService: ExternalService,
                       private val awsService: AwsService,

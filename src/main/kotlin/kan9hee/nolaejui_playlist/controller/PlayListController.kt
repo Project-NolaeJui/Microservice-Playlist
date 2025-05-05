@@ -7,7 +7,7 @@ import kan9hee.nolaejui_playlist.service.ExternalService
 import org.springframework.web.bind.annotation.*
 
 @RestController
-@RequestMapping("/playlist/api/playlist")
+@RequestMapping("/playlist/playlist")
 class PlayListController(private val dataService: DataService,
                          private val externalService: ExternalService) {
 
