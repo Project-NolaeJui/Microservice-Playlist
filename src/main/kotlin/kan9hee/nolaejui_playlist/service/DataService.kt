@@ -191,7 +191,7 @@ class DataService(private val playlistRepository: PlaylistRepository,
 
     @Transactional
     private fun getPlaylistEntity(playlistName: String, playlistOwner: String): Playlist {
-        val result = playlistRepositoryCustomImpl.findWithMusicIdsByTitleAndOwner(playlistName, playlistOwner)
+        val result = playlistRepositoryCustomImpl.getMusicsByTitleAndOwner(playlistName, playlistOwner)
             ?: throw IllegalArgumentException("$playlistOwner 의 $playlistName 에 따른 정보가 없습니다.")
         return result
     }
