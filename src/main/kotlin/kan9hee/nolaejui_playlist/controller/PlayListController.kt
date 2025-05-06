@@ -1,6 +1,7 @@
 package kan9hee.nolaejui_playlist.controller
 
 import kan9hee.nolaejui_playlist.dto.DetailMusicDto
+import kan9hee.nolaejui_playlist.dto.PlaylistSummaryDto
 import kan9hee.nolaejui_playlist.dto.requestOnly.*
 import kan9hee.nolaejui_playlist.service.DataService
 import kan9hee.nolaejui_playlist.service.ExternalService
@@ -11,8 +12,13 @@ import org.springframework.web.bind.annotation.*
 class PlayListController(private val dataService: DataService,
                          private val externalService: ExternalService) {
 
-    @GetMapping("/getPlaylistMusicIds")
-    suspend fun getPlaylistMusicIds(
+    @GetMapping("/getUserPlaylists")
+    fun getUserPlaylists(@RequestParam(value = "userName") userName:String): List<PlaylistSummaryDto> {
+        return dataService.getPlaylist(userName)
+    }
+
+    @GetMapping("/getPlaylistMusics")
+    suspend fun getPlaylistMusics(
         @RequestParam(value = "userName") userName:String,
         @RequestParam(value = "playlistName") playlistName: String,
         @RequestParam(value = "page") page: Int

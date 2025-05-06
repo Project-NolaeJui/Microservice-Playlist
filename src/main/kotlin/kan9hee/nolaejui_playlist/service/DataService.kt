@@ -2,6 +2,7 @@ package kan9hee.nolaejui_playlist.service
 
 import jakarta.transaction.Transactional
 import kan9hee.nolaejui_playlist.dto.DetailMusicDto
+import kan9hee.nolaejui_playlist.dto.PlaylistSummaryDto
 import kan9hee.nolaejui_playlist.dto.SearchOptionDto
 import kan9hee.nolaejui_playlist.dto.requestOnly.*
 import kan9hee.nolaejui_playlist.entity.*
@@ -97,6 +98,12 @@ class DataService(private val playlistRepository: PlaylistRepository,
 
         musicRepository.deleteById(music.id)
         awsService.deleteMusicS3(music.musicTitle)
+    }
+
+    @Transactional
+    fun getPlaylist(userName:String): List<PlaylistSummaryDto> {
+        return playlistRepositoryCustomImpl.getPlaylistsByOwner(userName)
+            ?:throw RuntimeException("플레이리스트 데이터에 문제가 발생했습니다. 관리자에게 문의 바랍니다.")
     }
 
     @Transactional
