@@ -13,42 +13,68 @@ class PlayListController(private val dataService: DataService,
                          private val externalService: ExternalService) {
 
     @GetMapping("/getUserPlaylists")
-    fun getUserPlaylists(@RequestParam(value = "userName") userName:String): List<PlaylistSummaryDto> {
-        return dataService.getPlaylist(userName)
+    fun getUserPlaylists(@RequestHeader("X-User-Id") userId:String): List<PlaylistSummaryDto> {
+        return dataService.getPlaylist(userId)
     }
 
     @GetMapping("/getPlaylistMusics")
     suspend fun getPlaylistMusics(
-        @RequestParam(value = "userName") userName:String,
+        @RequestHeader("X-User-Id") userId:String,
         @RequestParam(value = "playlistName") playlistName: String,
         @RequestParam(value = "page") page: Int
     ): List<DetailMusicDto> {
-        val playlistInfo = PlaylistReadDto(userName,playlistName,page)
+        val playlistInfo = PlaylistReadDto(userId,playlistName,page)
         return dataService.getPlaylistMusics(playlistInfo)
     }
 
     @PostMapping("/addNewPlaylist")
-    suspend fun addNewPlaylist(@RequestBody playlistCreateDto: PlaylistCdDto) {
-        dataService.addNewPlaylist(playlistCreateDto)
+    suspend fun addNewPlaylist(
+        @RequestHeader("X-User-Id") userId:String,
+        @RequestBody playlistCreateDto: PlaylistCdDto
+    ) {
+        dataService.addNewPlaylist(userId,playlistCreateDto)
     }
 
     @PostMapping("/changePlaylistTitleName")
-    suspend fun changePlaylistTitleName(@RequestBody playlistUpdateDto: PlaylistUpdateDto) {
-        dataService.updatePlaylistTitleName(playlistUpdateDto)
+    suspend fun changePlaylistTitleName(
+        @RequestHeader("X-User-Id") userId:String,
+        @RequestBody playlistUpdateDto: PlaylistUpdateDto
+    ) {
+        dataService.updatePlaylistTitleName(userId,playlistUpdateDto)
+    }
+
+    @PostMapping("/addMusicToPlaylist")
+    suspend fun addMusicToPlaylist(
+        @RequestHeader("X-User-Id") userId:String,
+        @RequestBody musicToPlaylistDto: MusicToPlaylistDto
+    ){
+        dataService.addMusicIdsToPlaylist(
+            musicToPlaylistDto.playlistName,
+            userId,
+            mutableListOf(musicToPlaylistDto.musicId)
+        )
     }
 
     @PostMapping("/pickupMusics")
-    suspend fun pickupMusics(@RequestBody locationDto: LocationDto) {
-        externalService.pickupMusics(locationDto)
+    suspend fun pickupMusics(
+        @RequestHeader("X-User-Id") userId:String,
+        @RequestBody locationDto: LocationDto
+    ) {
+        externalService.pickupMusics(userId,locationDto)
     }
 
     @PostMapping("/removeMusicFromPlaylist")
-    suspend fun removeMusicFromPlaylist(@RequestBody musicToPlaylistDto: MusicToPlaylistDto) {
-        dataService.removeMusicIdFromPlaylist(musicToPlaylistDto)
+    suspend fun removeMusicFromPlaylist(
+        @RequestHeader("X-User-Id") userId:String,
+        @RequestBody musicToPlaylistDto: MusicToPlaylistDto
+    ) {
+        dataService.removeMusicIdFromPlaylist(userId,musicToPlaylistDto)
     }
 
     @PostMapping("/deletePlaylist")
-    suspend fun deletePlaylist(@RequestBody playlistDeleteDto: PlaylistCdDto) {
-        dataService.deletePlaylist(playlistDeleteDto)
+    suspend fun deletePlaylist(
+        @RequestHeader("X-User-Id") userId:String,
+        @RequestBody playlistDeleteDto: PlaylistCdDto) {
+        dataService.deletePlaylist(userId,playlistDeleteDto)
     }
 }

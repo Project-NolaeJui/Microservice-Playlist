@@ -31,14 +31,14 @@ class ExternalService(@GrpcClient("nolaejui-auth")
         return response.resultMessage
     }
 
-    suspend fun pickupMusics(locationDto:LocationDto){
+    suspend fun pickupMusics(userId:String,locationDto:LocationDto){
         val request = Playlist.LocationInfo.newBuilder()
             .setLongitude(locationDto.longitude)
             .setLatitude(locationDto.latitude)
             .build()
 
         val response = playLogStub.pickupMusics(request)
-        dataService.addMusicIdsToPlaylist("pickup",locationDto.userName,response.musicIdsList)
+        dataService.addMusicIdsToPlaylist("pickup",userId,response.musicIdsList)
     }
 
     suspend fun reportMusicProblem(reportProblemDto: ReportProblemDto): String {

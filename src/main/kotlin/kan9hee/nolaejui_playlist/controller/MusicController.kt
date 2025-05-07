@@ -42,18 +42,27 @@ class MusicController(private val dataService: DataService,
     }
 
     @PostMapping("/registerMusic")
-    suspend fun registerMusic(@RequestBody musicDataInputDto: MusicDataInputDto) {
-        return dataService.createUsersMusic(musicDataInputDto)
+    suspend fun registerMusic(
+        @RequestHeader("X-User-Id") userId:String,
+        @RequestBody musicDataInputDto: MusicDataInputDto
+    ) {
+        return dataService.createUsersMusic(userId,musicDataInputDto)
     }
 
     @PostMapping("/changeMusicInfo")
-    suspend fun changeMyMusicInfo(@RequestBody musicDataInputDto: MusicDataInputDto) {
-        dataService.changeUsersMusic(musicDataInputDto)
+    suspend fun changeMusicInfo(
+        @RequestHeader("X-User-Id") userId:String,
+        @RequestBody musicDataInputDto: MusicDataInputDto
+    ) {
+        dataService.changeUsersMusic(userId,musicDataInputDto)
     }
 
-    @PostMapping("/deleteMyMusic")
-    suspend fun deleteMyMusic(@RequestBody musicDeleteDto: MusicDeleteDto){
-        dataService.deleteUsersMusic(musicDeleteDto)
+    @PostMapping("/deleteMusic")
+    suspend fun deleteMusic(
+        @RequestHeader("X-User-Id") userId:String,
+        @RequestBody deleteDto: MusicDeleteDto
+    ){
+        dataService.deleteUsersMusic(userId,deleteDto)
     }
 
     @PostMapping("/reportMusicProblem")

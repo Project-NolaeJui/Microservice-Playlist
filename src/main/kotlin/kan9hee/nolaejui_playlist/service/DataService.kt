@@ -8,6 +8,7 @@ import kan9hee.nolaejui_playlist.dto.requestOnly.*
 import kan9hee.nolaejui_playlist.entity.*
 import kan9hee.nolaejui_playlist.repository.*
 import org.springframework.stereotype.Service
+import java.time.LocalDateTime
 
 @Service
 class DataService(private val playlistRepository: PlaylistRepository,
@@ -18,15 +19,15 @@ class DataService(private val playlistRepository: PlaylistRepository,
                   private val searchService: SearchService) {
 
     @Transactional
-    suspend fun createUsersMusic(createInfo: MusicDataInputDto) {
+    suspend fun createUsersMusic(userId:String,createInfo: MusicDataInputDto) {
         val music = Music(
             createInfo.musicTitle,
             createInfo.artist,
             createInfo.dataType,
             createInfo.dataUrl,
             true,
-            createInfo.userName,
-            createInfo.uploadDate
+            userId,
+            LocalDateTime.now()
         )
         addMusicAndTagRelation(createInfo.tags,music)
         musicRepository.save(music)
@@ -71,10 +72,10 @@ class DataService(private val playlistRepository: PlaylistRepository,
     }
 
     @Transactional
-    suspend fun changeUsersMusic(changeInfo: MusicDataInputDto){
+    suspend fun changeUsersMusic(userId:String,changeInfo: MusicDataInputDto){
         val music = changeInfo.id?.let { findMusicEntity(it) }
         music?.let {
-            if(changeInfo.userName!=music.uploader)
+            if(userId!=music.uploader)
                 throw RuntimeException("음원의 소유주가 아닙니다.")
 
             music.musicTitle = changeInfo.musicTitle
@@ -82,7 +83,6 @@ class DataService(private val playlistRepository: PlaylistRepository,
             music.dataType = changeInfo.dataType
             music.dataUrl = changeInfo.dataUrl
             music.isPlayable = changeInfo.isPlayable
-            music.uploader = changeInfo.userName
 
             music.musicTagRelations.clear()
             addMusicAndTagRelation(changeInfo.tags,music)
@@ -91,9 +91,9 @@ class DataService(private val playlistRepository: PlaylistRepository,
     }
 
     @Transactional
-    suspend fun deleteUsersMusic(deleteDto: MusicDeleteDto){
+    suspend fun deleteUsersMusic(userId:String,deleteDto:MusicDeleteDto){
         val music = findMusicEntity(deleteDto.id)
-        if(deleteDto.userName!=music.uploader)
+        if(userId!=music.uploader)
             throw RuntimeException("음원의 소유주가 아닙니다.")
 
         musicRepository.deleteById(music.id)
@@ -107,17 +107,17 @@ class DataService(private val playlistRepository: PlaylistRepository,
     }
 
     @Transactional
-    suspend fun addNewPlaylist(playlistCreateDto: PlaylistCdDto){
+    suspend fun addNewPlaylist(userId:String,playlistCreateDto: PlaylistCdDto){
         playlistRepository.save(Playlist(
             playlistCreateDto.playlistName,
-            playlistCreateDto.userName,
+            userId,
             false))
     }
 
     @Transactional
-    suspend fun updatePlaylistTitleName(playlistUpdateDto: PlaylistUpdateDto){
-        val playlist = getPlaylistEntity(playlistUpdateDto.basicPlaylistName,playlistUpdateDto.userName)
-        if(playlistUpdateDto.userName != playlist.playListOwner)
+    suspend fun updatePlaylistTitleName(userId:String,playlistUpdateDto: PlaylistUpdateDto){
+        val playlist = getPlaylistEntity(playlistUpdateDto.basicPlaylistName,userId)
+        if(userId != playlist.playListOwner)
             throw IllegalArgumentException("플레이리스트 소유주가 아닙니다.")
 
         playlist.playListTitle = playlistUpdateDto.newPlaylistName
@@ -153,27 +153,27 @@ class DataService(private val playlistRepository: PlaylistRepository,
     }
 
     @Transactional
-    suspend fun removeMusicIdFromPlaylist(musicToPlaylistDto: MusicToPlaylistDto){
-        val playlist = getPlaylistEntity(musicToPlaylistDto.playlistName,musicToPlaylistDto.userName)
+    suspend fun removeMusicIdFromPlaylist(userId:String,musicToPlaylistDto: MusicToPlaylistDto){
+        val playlist = getPlaylistEntity(musicToPlaylistDto.playlistName,userId)
         val musicIdToRemove = playlist.playlistMusicIds.find { it.musicId == musicToPlaylistDto.musicId }
             ?: throw IllegalArgumentException("플레이리스트에 ${musicToPlaylistDto.musicId} 정보가 없습니다.")
 
-        if(musicToPlaylistDto.userName != playlist.playListOwner)
+        if(userId != playlist.playListOwner)
             throw IllegalArgumentException("플레이리스트 소유주가 아닙니다.")
 
         playlist.playlistMusicIds.remove(musicIdToRemove)
     }
 
     @Transactional
-    suspend fun deletePlaylist(playlistDeleteDto:PlaylistCdDto){
+    suspend fun deletePlaylist(userId:String,playlistDeleteDto:PlaylistCdDto){
         if(playlistDeleteDto.playlistName == "pickup")
             throw IllegalArgumentException("픽업용 플레이리스트는 삭제할 수 없습니다.")
 
-        val playlist = getPlaylistEntity(playlistDeleteDto.playlistName,playlistDeleteDto.userName)
-        if(playlistDeleteDto.userName != playlist.playListOwner)
+        val playlist = getPlaylistEntity(playlistDeleteDto.playlistName,userId)
+        if(userId != playlist.playListOwner)
             throw IllegalArgumentException("플레이리스트 소유주가 아닙니다.")
 
-        playlistRepository.deleteByPlayListTitleAndPlayListOwner(playlistDeleteDto.playlistName,playlistDeleteDto.userName)
+        playlistRepository.deleteByPlayListTitleAndPlayListOwner(playlistDeleteDto.playlistName,userId)
     }
 
     @Transactional
